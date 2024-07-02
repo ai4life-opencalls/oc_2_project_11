@@ -5,7 +5,7 @@ import cv2
 
 def get_point_coord(point: str):
     # to convert string coordinates into numbers
-    point = point.strip("[]").replace('"', '').replace("'", "")
+    point = point.strip("[]").replace('"', "").replace("'", "")
     y, x = point.split(",")
 
     return float(y), float(x)
@@ -25,7 +25,7 @@ def show_mask(mask, ax, random_color=False):
     if random_color:
         color = np.concatenate([np.random.random(3), np.array([0.6])], axis=0)
     else:
-        color = np.array([30/255, 144/255, 255/255, 0.6])
+        color = np.array([30 / 255, 144 / 255, 255 / 255, 0.6])
     h, w = mask.shape[-2:]
     mask_image = mask.reshape(h, w, 1) * color.reshape(1, 1, -1)
     ax.imshow(mask_image)
@@ -35,14 +35,26 @@ def show_points(coords, labels, ax, marker_size=20):
     pos_points = coords[labels == 1]
     neg_points = coords[labels == 0]
     ax.scatter(
-        pos_points[:, 0], pos_points[:, 1],
-        color="limegreen", marker="o", s=marker_size,
-        edgecolor="white", linewidth=0.9, alpha=0.85, zorder=999
+        pos_points[:, 0],
+        pos_points[:, 1],
+        color="limegreen",
+        marker="o",
+        s=marker_size,
+        edgecolor="white",
+        linewidth=0.9,
+        alpha=0.85,
+        zorder=999,
     )
     ax.scatter(
-        neg_points[:, 0], neg_points[:, 1],
-        color="red", marker="o", s=marker_size,
-        edgecolor="white", linewidth=0.9, alpha=0.85, zorder=999
+        neg_points[:, 0],
+        neg_points[:, 1],
+        color="red",
+        marker="o",
+        s=marker_size,
+        edgecolor="white",
+        linewidth=0.9,
+        alpha=0.85,
+        zorder=999,
     )
 
 
