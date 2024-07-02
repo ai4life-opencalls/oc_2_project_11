@@ -1,10 +1,24 @@
-name: AI4Life_OC2_2024_11
+name: ai4life_11
 channels:
+  - pytorch
+  - anaconda
   - conda-forge
   - defaults
 dependencies:
+  - python=3.9
+  - scikit-learn
+  - scikit-image
+  - scipy
+  - pytorch
+  - torchvision
   - pip
-  - python
-  - jupyterlab
   - pip:
+    - numpy
+    - matplotlib
+    - pandas
+    - jupyterlab
+    - ipykernel
+    - opencv-python
+    - timm
+    - git+https://github.com/facebookresearch/segment-anything.git
     - -r requirements.txt
