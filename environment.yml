@@ -1,0 +1,10 @@
+name: AI4Life_OC2_2024_11
+channels:
+  - conda-forge
+  - defaults
+dependencies:
+  - pip
+  - python
+  - jupyterlab
+  - pip:
+    - -r requirements.txt
