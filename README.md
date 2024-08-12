@@ -8,7 +8,26 @@ Corresponds to AI4Life Project 11 with Nils Jacobsen from Royal Belgian Institut
 
 ## Installation
 
+You can clone the repository and create an environment from the environment file included as follows.
+
+```
+git clone git@github.com:BIIFSweden/AI4Life_OC2_2024_11.git
+cd AI4Life_OC2_2024_11
+conda env create -f environment.yml
+```
+
 ## Usage
+
+
+## Development
+
+If you wish to contribute, it would be nice to chekc the style and other things through pre-commit.
+You can do this by installing pre-commit before making new commits.
+
+```
+pip install pre-commit
+pre-commit install
+```
 
 ## Cite
 
