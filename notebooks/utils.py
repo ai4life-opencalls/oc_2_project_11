@@ -66,8 +66,9 @@ def show_box(box, ax):
     )
 
 
-def show_res(masks, scores, input_point, input_label, input_box, image):
-    for i, (mask, score) in enumerate(zip(masks, scores)):
+def show_res(masks, scores, species, input_points, input_labels, input_box, image, saveit = True):
+    for i, (mask, score, specie, input_point, input_label) in enumerate(zip(masks, scores, species, input_points, input_labels)):
+        print(specie)
         plt.figure(figsize=(10, 10))
         plt.imshow(image)
         show_mask(mask, plt.gca())
@@ -77,11 +78,14 @@ def show_res(masks, scores, input_point, input_label, input_box, image):
         if (input_point is not None) and (input_label is not None):
             show_points(input_point, input_label, plt.gca())
 
-        print(f"Score: {score:.3f}")
+        #print(f"Score: {score:.3f}")
         plt.axis("off")
+        plt.title(specie[0])
+        if saveit:
+            plt.savefig("masked_image_"+str(i)+'.png')
 
 
-def show_res_multi(masks, scores, image, input_box=None, ax=None):
+def show_res_multi(masks, scores, image, input_box=None, ax=None, saveit = False):
     if ax is None:
         fig, ax = plt.subplots(1, 1, figsize=(9, 8))
 
@@ -96,3 +100,5 @@ def show_res_multi(masks, scores, image, input_box=None, ax=None):
     # for score in scores:
     #     print(f"Score: {score.item():.3f}")
     # ax.axis("off")
+    if saveit:
+        plt.savefig('foo.png')
