@@ -31,9 +31,9 @@ def show_mask(mask, ax, random_color=False):
     ax.imshow(mask_image)
 
 
-def show_points(coords, labels, ax, marker_size=20):
-    pos_points = coords[labels == 1]
-    neg_points = coords[labels == 0]
+def show_points(coords, labels, ax, marker_size=100):
+    pos_points = coords[labels == 0]
+    neg_points = coords[labels == 1]
     ax.scatter(
         pos_points[:, 0],
         pos_points[:, 1],
@@ -64,6 +64,20 @@ def show_box(box, ax):
     ax.add_patch(
         plt.Rectangle((x0, y0), w, h, edgecolor="green", facecolor=(0, 0, 0, 0), lw=2)
     )
+
+def plot_mask_and_label(mask, species, out_file, input_point, input_label, image, saveit = True):
+    plt.figure(figsize=(40, 22))
+    plt.imshow(image)
+    show_mask(mask, plt.gca())
+
+    if (input_point is not None) and (input_label is not None):
+        show_points(input_point, input_label, plt.gca(), marker_size=100)
+
+    #print(f"Score: {score:.3f}")
+    plt.axis("off")
+    plt.title(species[0], fontsize=40)
+    if saveit:
+        plt.savefig(out_file,  bbox_inches='tight', pad_inches=0)
 
 
 def show_res(masks, scores, species, input_points, input_labels, input_box, image, saveit = True):
