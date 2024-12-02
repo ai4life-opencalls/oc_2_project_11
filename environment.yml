@@ -1,24 +1,24 @@
-name: ai4life_11
+name: sam2
 channels:
   - pytorch
-  - anaconda
+  - nvidia
   - conda-forge
   - defaults
 dependencies:
-  - python=3.9
+  - python=3.10
   - scikit-learn
   - scikit-image
   - scipy
-  - pytorch
-  - torchvision
+  - pytorch-cuda=11.8
+  - pytorch=2.3.1
+  - torchvision=0.18.1
+  - sam-2
   - pip
   - pip:
-    - numpy
+    - numpy>=1.24.4
     - matplotlib
     - pandas
     - jupyterlab
     - ipykernel
     - opencv-python
-    - timm
-    - git+https://github.com/facebookresearch/segment-anything.git
-    - -r requirements.txt
+    - iopath>=0.1.10
