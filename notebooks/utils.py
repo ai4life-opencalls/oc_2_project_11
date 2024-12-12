@@ -53,6 +53,7 @@ def get_image(image_name, image_dir):
 
 
 def get_point_coord(point: str):
+    """Get point coordinates from string."""
     # to convert string coordinates into numbers
     point = point.strip("[]").replace('"', '').replace("'", "")
     y, x = point.split(",")
@@ -61,6 +62,7 @@ def get_point_coord(point: str):
 
 
 def get_polygon(mask):
+    """Get polygon coordinates from mask."""
     mask_img = mask.astype(np.uint8)
     contours, hierarchy = cv2.findContours(
         mask_img, cv2.RETR_TREE, cv2.CHAIN_APPROX_TC89_KCOS
@@ -71,6 +73,7 @@ def get_polygon(mask):
 
 
 def show_mask(mask, ax, random_color=False):
+    """Plot mask into axes."""
     if random_color:
         color = np.concatenate([np.random.random(3), np.array([0.6])], axis=0)
     else:
@@ -79,7 +82,9 @@ def show_mask(mask, ax, random_color=False):
     mask_image = mask.reshape(h, w, 1) * color.reshape(1, 1, -1)
     ax.imshow(mask_image)
 
+
 def plot_mask_and_label(mask, species, out_file, input_point, input_label, image, saveit = True):
+    """Plot mask, point and species label. You can also save it."""
     plt.figure(figsize=(40, 22))
     plt.imshow(image)
     show_mask(mask, plt.gca())
@@ -93,7 +98,9 @@ def plot_mask_and_label(mask, species, out_file, input_point, input_label, image
     if saveit:
         plt.savefig(out_file,  bbox_inches='tight', pad_inches=0)
         
+
 def show_points(coords, labels, ax, marker_size=20):
+    """Plot all points."""
     pos_points = coords[labels == 1]
     neg_points = coords[labels == 0]
     ax.scatter(
@@ -109,6 +116,7 @@ def show_points(coords, labels, ax, marker_size=20):
 
 
 def show_box(box, ax):
+    """Plot bounding box."""
     x0, y0 = box[0], box[1]
     w, h = box[2] - box[0], box[3] - box[1]
     ax.add_patch(
