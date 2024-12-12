@@ -3,6 +3,7 @@ import matplotlib.pyplot as plt
 import cv2
 import requests
 from pathlib import Path
+from PIL import Image
 
 
 def download_model(model_url: str = "https://dl.fbaipublicfiles.com/segment_anything_2/072824/sam2_hiera_large.pt",
@@ -26,6 +27,29 @@ def download_model(model_url: str = "https://dl.fbaipublicfiles.com/segment_anyt
         for chunk in response.iter_content(chunk_size=8192):
             f.write(chunk)
     print(f"Downloaded {config_url.split('/')[-1]}")
+
+
+def get_image(image_name, image_dir):
+    """Get image from the image directory. Some image 
+    files have <space> in their names, and <space> replaced
+    by <_> in the csv table. This function tries to find the
+    image file."""
+    # some image files have <space> in their names,
+    # but <space> replaced by <_> in the csv table.
+    image_file = image_dir.joinpath(image_name)
+    if not image_file.exists():
+        # try to find the image
+        image_file = None
+        for file in image_dir.glob("*.jpg"):
+            if image_name.replace("_", " ") == file.name.replace("_", " "):
+                image_file = image_dir.joinpath(file.name)
+                break
+
+    if image_file is not None:
+        test_image = Image.open(image_file)
+        return np.array(test_image)
+    else:
+        return None
 
 
 def get_point_coord(point: str):
@@ -125,3 +149,14 @@ def show_res_multi(masks, scores, image, input_box=None, ax=None):
     # for score in scores:
     #     print(f"Score: {score.item():.3f}")
     # ax.axis("off")
+
+
+def save_image_masks(masks, image_name, results_dir):
+    """Save each mask as a separate png in results_dir."""
+    save_dir = results_dir.joinpath(image_name)
+    save_dir.mkdir(parents=True, exist_ok=True)
+    for i, mask in enumerate(masks):
+        # mask is 3D: 1, y, x
+        mask_img = mask[0].astype(np.uint8) * 255
+        mask_img = Image.fromarray(mask_img)
+        mask_img.save(save_dir.joinpath(f"{i:03d}.png"))
