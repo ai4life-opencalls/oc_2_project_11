@@ -1,13 +1,22 @@
-import numpy as np
-import matplotlib.pyplot as plt
-import cv2
-import requests
+import datetime as dt
+from typing import (
+    Union, Optional,
+    List, Tuple, Dict
+)
 from pathlib import Path
+
+import numpy as np
+import pandas as pd
+import matplotlib.pyplot as plt
+import requests
+import cv2
+
 from PIL import Image
+from bokeh import models as bkmodels
 
 
-def download_model(model_url: str = "https://dl.fbaipublicfiles.com/segment_anything_2/072824/sam2_hiera_large.pt",
-                   config_url: str =  "https://raw.githubusercontent.com/facebookresearch/sam2/refs/heads/main/sam2/configs/sam2/sam2_hiera_l.yaml",
+def download_model(model_url: str = "https://dl.fbaipublicfiles.com/segment_anything_2/092824/sam2.1_hiera_large.pt",
+                   config_url: str =  "https://raw.githubusercontent.com/facebookresearch/sam2/refs/heads/main/sam2/configs/sam2.1/sam2.1_hiera_l.yaml",
                    force: bool = False
                    ) -> None:
     """Check if there are files inside the models folder, if not download the 
@@ -27,6 +36,36 @@ def download_model(model_url: str = "https://dl.fbaipublicfiles.com/segment_anyt
         for chunk in response.iter_content(chunk_size=8192):
             f.write(chunk)
     print(f"Downloaded {config_url.split('/')[-1]}")
+
+
+def hex2rgb(hex:str, alpha=0.5):
+    rgb = tuple(int(hex[i: i + 2], 16) for i in (0, 2, 4))
+    return rgb + (alpha,)
+
+
+def load_prompt_data(prompt_file: Union[str, Path], is_paparazzi:bool = None) -> pd.DataFrame:
+    if isinstance(prompt_file, str):
+        prompt_file = Path(prompt_file)
+    if is_paparazzi is None:
+        is_paparazzi = prompt_file.suffix == ".txt"
+
+    if is_paparazzi:
+        # paparazzi txt file
+        df_prompts = pd.read_csv(
+            prompt_file,
+            delimiter="\t",
+            header=None,
+            names=["x", "y", "label"]
+        )
+    else:
+        # BIIGLE csv file
+        df_prompts = pd.read_csv(prompt_file)
+        df_prompts = df_prompts[
+            (df_prompts["shape_name"] == "Point") &
+            (df_prompts["label_name"] != "Laser Point")
+        ].reset_index(drop=True)
+
+    return df_prompts
 
 
 def get_image(image_name, image_dir):
@@ -61,15 +100,116 @@ def get_point_coord(point: str):
     return float(y), float(x)
 
 
-def get_polygon(mask):
+def get_polygon(mask, coord_order="xy", smooth_epsilon=0.003):
     """Get polygon coordinates from mask."""
     mask_img = mask.astype(np.uint8)
-    contours, hierarchy = cv2.findContours(
-        mask_img, cv2.RETR_TREE, cv2.CHAIN_APPROX_TC89_KCOS
+    contours, _ = cv2.findContours(
+        mask_img, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_TC89_KCOS
     )
-    # contours shape: n,1,2 in x,y coords
-    # transform to n,2 in y,x coords
-    return contours[0][:, 0, [1, 0]]
+    contour = contours[0]  # shape: n,1,2 in x,y coords
+
+    # smooth the contour
+    if smooth_epsilon > 0:
+        peri = cv2.arcLength(contour, True)
+        smoothed_contour = cv2.approxPolyDP(contour, smooth_epsilon * peri, True)
+        # make sure smoothed contour has at least 4 points
+        if len(smoothed_contour) > 4:
+            contour = smoothed_contour
+    # omit the extra dim
+    contour = contour[:, 0]
+    # add the first point to the end to make it closed
+    contour = np.vstack((contour, contour[0]))
+    # check x and y ordering
+    if coord_order == "yx":
+        contour = contour[:, [1, 0]]
+
+    return contour
+
+
+def get_coco_category(supercategory, cat_id, name):
+    return {
+        "supercategory": supercategory,
+        "id": cat_id,
+        "name": name
+    }
+
+
+def get_coco_image(image_id, width, height, file_name):
+    return {
+        "id": image_id,
+        "width": width,
+        "height": height,
+        "file_name": file_name,
+    }
+
+
+def get_coco_annotation(contour, image_id, category_id, annotation_id):
+    contour = contour.astype(np.int32)
+    return {
+        "iscrowd": 0,
+        "id": int(annotation_id),
+        "image_id": int(image_id),
+        "category_id": int(category_id),
+        "bbox": cv2.boundingRect(contour),  # [x,y,width,height]
+        "area": cv2.contourArea(contour),
+        "segmentation": [contour.flatten().tolist()],
+    }
+
+
+def convert_to_coco(
+    df_categories: pd.DataFrame,
+    img_index: int,
+    image_ds: bkmodels.ColumnDataSource,
+    mask_ds: bkmodels.ColumnDataSource
+):
+    coco_annotations = {}
+    coco_annotations["info"] = {
+        "description": "OC2 Project 11 annotations",
+        "url": "",
+        "version": "1.0",
+        "year": 2024,
+        "contributor": "Mehdi Seifi",
+        "date_created": dt.datetime.strftime(dt.datetime.now(), "%Y/%m/%d")
+    }
+    coco_annotations["licenses"] = {
+        "url": "https://choosealicense.com/licenses/bsd-3-clause/",
+        "id": 1,
+        "name": "BSD 3-Clause “New” or “Revised” License"
+    }
+    # add categories
+    coco_annotations["categories"] = [
+        get_coco_category(
+            supercategory=row["supercategory"], cat_id=row["id"], name=row["name"]
+        )
+        for i, row in df_categories.iterrows()
+    ]
+    # add the image
+    coco_annotations["images"] = [
+        get_coco_image(
+            img_index + 1,
+            image_ds.data["w"][img_index],
+            image_ds.data["h"][img_index],
+            Path(image_ds.data["path"][img_index]).name.replace(" ", "_")
+        )
+    ]
+    # add mask polygons
+    coco_annotations["annotations"] = []
+    for i, row in mask_ds.to_df().iterrows():
+        # skip row with no category id (labeled as None)
+        if np.isnan(row["cat_id"]) or row["cat_id"] == -1:
+            continue
+        # create the coco annotation of the mask
+        polygon = np.stack((row["xs"], row["ys"]), axis=-1, dtype=np.int32)
+        # skip small polygons (less than 4 points)
+        if len(polygon) < 4:
+            continue
+        coco_annotations["annotations"].append(
+            get_coco_annotation(
+                polygon, img_index + 1, row["cat_id"], i + 1
+            )
+        )
+
+    return coco_annotations
 
 
 def show_mask(mask, ax, random_color=False):

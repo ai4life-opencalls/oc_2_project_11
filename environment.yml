@@ -23,3 +23,4 @@ dependencies:
     - ipykernel
     - opencv-python
     - iopath>=0.1.10
+    - bokeh
