@@ -3,6 +3,7 @@ import matplotlib.pyplot as plt
 import cv2
 import requests
 from pathlib import Path
+from PIL import Image
 
 
 def download_model(model_url: str = "https://dl.fbaipublicfiles.com/segment_anything_2/072824/sam2_hiera_large.pt",
@@ -28,7 +29,31 @@ def download_model(model_url: str = "https://dl.fbaipublicfiles.com/segment_anyt
     print(f"Downloaded {config_url.split('/')[-1]}")
 
 
+def get_image(image_name, image_dir):
+    """Get image from the image directory. Some image 
+    files have <space> in their names, and <space> replaced
+    by <_> in the csv table. This function tries to find the
+    image file."""
+    # some image files have <space> in their names,
+    # but <space> replaced by <_> in the csv table.
+    image_file = image_dir.joinpath(image_name)
+    if not image_file.exists():
+        # try to find the image
+        image_file = None
+        for file in image_dir.glob("*.jpg"):
+            if image_name.replace("_", " ") == file.name.replace("_", " "):
+                image_file = image_dir.joinpath(file.name)
+                break
+
+    if image_file is not None:
+        test_image = Image.open(image_file)
+        return np.array(test_image)
+    else:
+        return None
+
+
 def get_point_coord(point: str):
+    """Get point coordinates from string."""
     # to convert string coordinates into numbers
     point = point.strip("[]").replace('"', '').replace("'", "")
     y, x = point.split(",")
@@ -37,6 +62,7 @@ def get_point_coord(point: str):
 
 
 def get_polygon(mask):
+    """Get polygon coordinates from mask."""
     mask_img = mask.astype(np.uint8)
     contours, hierarchy = cv2.findContours(
         mask_img, cv2.RETR_TREE, cv2.CHAIN_APPROX_TC89_KCOS
@@ -47,6 +73,7 @@ def get_polygon(mask):
 
 
 def show_mask(mask, ax, random_color=False):
+    """Plot mask into axes."""
     if random_color:
         color = np.concatenate([np.random.random(3), np.array([0.6])], axis=0)
     else:
@@ -55,7 +82,9 @@ def show_mask(mask, ax, random_color=False):
     mask_image = mask.reshape(h, w, 1) * color.reshape(1, 1, -1)
     ax.imshow(mask_image)
 
+
 def plot_mask_and_label(mask, species, out_file, input_point, input_label, image, saveit = True):
+    """Plot mask, point and species label. You can also save it."""
     plt.figure(figsize=(40, 22))
     plt.imshow(image)
     show_mask(mask, plt.gca())
@@ -69,7 +98,9 @@ def plot_mask_and_label(mask, species, out_file, input_point, input_label, image
     if saveit:
         plt.savefig(out_file,  bbox_inches='tight', pad_inches=0)
         
+
 def show_points(coords, labels, ax, marker_size=20):
+    """Plot all points."""
     pos_points = coords[labels == 1]
     neg_points = coords[labels == 0]
     ax.scatter(
@@ -85,6 +116,7 @@ def show_points(coords, labels, ax, marker_size=20):
 
 
 def show_box(box, ax):
+    """Plot bounding box."""
     x0, y0 = box[0], box[1]
     w, h = box[2] - box[0], box[3] - box[1]
     ax.add_patch(
@@ -125,3 +157,14 @@ def show_res_multi(masks, scores, image, input_box=None, ax=None):
     # for score in scores:
     #     print(f"Score: {score.item():.3f}")
     # ax.axis("off")
+
+
+def save_image_masks(masks, image_name, results_dir):
+    """Save each mask as a separate png in results_dir."""
+    save_dir = results_dir.joinpath(image_name)
+    save_dir.mkdir(parents=True, exist_ok=True)
+    for i, mask in enumerate(masks):
+        # mask is 3D: 1, y, x
+        mask_img = mask[0].astype(np.uint8) * 255
+        mask_img = Image.fromarray(mask_img)
+        mask_img.save(save_dir.joinpath(f"{i:03d}.png"))
