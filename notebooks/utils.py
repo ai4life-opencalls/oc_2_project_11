@@ -1,49 +1,72 @@
+from typing import Union
+
 import datetime as dt
-from typing import (
-    Union, Optional,
-    List, Tuple, Dict
-)
 from pathlib import Path
 
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
-import requests
+import pooch
 import cv2
 
 from PIL import Image
 from bokeh import models as bkmodels
 
 
-def download_model(model_url: str = "https://dl.fbaipublicfiles.com/segment_anything_2/092824/sam2.1_hiera_large.pt",
-                   config_url: str =  "https://raw.githubusercontent.com/facebookresearch/sam2/refs/heads/main/sam2/configs/sam2.1/sam2.1_hiera_l.yaml",
-                   force: bool = False
-                   ) -> None:
-    """Check if there are files inside the models folder, if not download the 
-    model and config files. Use force=True to force download."""
-    if not force and len(list(Path("../models").glob("*.pt"))) > 0:
-        print("Model files already exist. Use force=True to redownload.")
-        return
-    
-    response = requests.get(model_url, stream=True)
-    with open("../models/sam2_hiera_large.pt", 'wb') as f:
-        for chunk in response.iter_content(chunk_size=8192):
-            f.write(chunk)
-    print(f"Downloaded {model_url.split('/')[-1]}")
-
-    response = requests.get(config_url, stream=True)
-    with open("../models/sam2_hiera_l.yaml", 'wb') as f:
-        for chunk in response.iter_content(chunk_size=8192):
-            f.write(chunk)
-    print(f"Downloaded {config_url.split('/')[-1]}")
+MODELS = {
+    "SAM2_Large": "https://dl.fbaipublicfiles.com/segment_anything_2/092824/sam2.1_hiera_large.pt",
+    "SAM2_Base": "https://dl.fbaipublicfiles.com/segment_anything_2/092824/sam2.1_hiera_base_plus.pt",
+}
 
 
-def hex2rgb(hex:str, alpha=0.5):
+def download_model(name: str = "SAM2_Large"):
+    try:
+        cache_dir = Path("../models")
+        model_url = MODELS[name]
+        downloaded_file = pooch.retrieve(
+            url=model_url,
+            path=cache_dir,
+            known_hash=None,
+            progressbar=True
+        )
+        return downloaded_file
+
+    except Exception as err:
+        print(f"\nError while downloading the model:\n{err}")
+        return None
+
+
+# def download_model(model_url: str = "https://dl.fbaipublicfiles.com/segment_anything_2/092824/sam2.1_hiera_large.pt",
+#                    config_url: str = "https://raw.githubusercontent.com/facebookresearch/sam2/refs/heads/main/sam2/configs/sam2.1/sam2.1_hiera_l.yaml",
+#                    force: bool = False
+#                    ) -> None:
+#     """Check if there are files inside the models folder, if not download the
+#     model and config files. Use force=True to force download."""
+#     if not force and len(list(Path("../models").glob("*.pt"))) > 0:
+#         print("Model files already exist. Use force=True to redownload.")
+#         return
+
+#     response = requests.get(model_url, stream=True)
+#     with open("../models/sam2_hiera_large.pt", 'wb') as f:
+#         for chunk in response.iter_content(chunk_size=8192):
+#             f.write(chunk)
+#     print(f"Downloaded {model_url.split('/')[-1]}")
+
+#     response = requests.get(config_url, stream=True)
+#     with open("../models/sam2_hiera_l.yaml", 'wb') as f:
+#         for chunk in response.iter_content(chunk_size=8192):
+#             f.write(chunk)
+#     print(f"Downloaded {config_url.split('/')[-1]}")
+
+
+def hex2rgb(hex: str, alpha=0.5):
     rgb = tuple(int(hex[i: i + 2], 16) for i in (0, 2, 4))
     return rgb + (alpha,)
 
 
-def load_prompt_data(prompt_file: Union[str, Path], is_paparazzi:bool = None) -> pd.DataFrame:
+def load_prompt_data(
+        prompt_file: Union[str, Path],
+        is_paparazzi: bool = None) -> pd.DataFrame:
     if isinstance(prompt_file, str):
         prompt_file = Path(prompt_file)
     if is_paparazzi is None:
@@ -217,13 +240,14 @@ def show_mask(mask, ax, random_color=False):
     if random_color:
         color = np.concatenate([np.random.random(3), np.array([0.6])], axis=0)
     else:
-        color = np.array([30/255, 144/255, 255/255, 0.6])
+        color = np.array([30 / 255, 144 / 255, 255 / 255, 0.6])
     h, w = mask.shape[-2:]
     mask_image = mask.reshape(h, w, 1) * color.reshape(1, 1, -1)
     ax.imshow(mask_image)
 
 
-def plot_mask_and_label(mask, species, out_file, input_point, input_label, image, saveit = True):
+def plot_mask_and_label(
+        mask, species, out_file, input_point, input_label, image, saveit=True):
     """Plot mask, point and species label. You can also save it."""
     plt.figure(figsize=(40, 22))
     plt.imshow(image)
@@ -232,12 +256,12 @@ def plot_mask_and_label(mask, species, out_file, input_point, input_label, image
     if (input_point is not None) and (input_label is not None):
         show_points(input_point, input_label, plt.gca(), marker_size=100)
 
-    #print(f"Score: {score:.3f}")
+    # print(f"Score: {score:.3f}")
     plt.axis("off")
     plt.title(species[0], fontsize=40)
     if saveit:
-        plt.savefig(out_file,  bbox_inches='tight', pad_inches=0)
-        
+        plt.savefig(out_file, bbox_inches='tight', pad_inches=0)
+
 
 def show_points(coords, labels, ax, marker_size=20):
     """Plot all points."""

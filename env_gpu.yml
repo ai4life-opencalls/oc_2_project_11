@@ -1,0 +1,28 @@
+name: ai4life
+channels:
+  - pytorch
+  - nvidia
+  - conda-forge
+  - defaults
+dependencies:
+  - python=3.10
+  - scikit-learn
+  - scikit-image
+  - scipy
+  - pytorch-cuda=12.1
+  - pytorch=2.3.1
+  - torchvision=0.18.1
+  - sam-2
+  - ipywidgets
+  - pip
+  - pip:
+    - numpy>=1.24.4
+    - matplotlib
+    - pandas
+    - jupyterlab
+    - ipykernel
+    - opencv-python
+    - iopath>=0.1.10
+    - bokeh
+    - pooch
+    - tqdm
