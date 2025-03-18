@@ -36,29 +36,6 @@ def download_model(name: str = "SAM2_Large"):
         return None
 
 
-# def download_model(model_url: str = "https://dl.fbaipublicfiles.com/segment_anything_2/092824/sam2.1_hiera_large.pt",
-#                    config_url: str = "https://raw.githubusercontent.com/facebookresearch/sam2/refs/heads/main/sam2/configs/sam2.1/sam2.1_hiera_l.yaml",
-#                    force: bool = False
-#                    ) -> None:
-#     """Check if there are files inside the models folder, if not download the
-#     model and config files. Use force=True to force download."""
-#     if not force and len(list(Path("../models").glob("*.pt"))) > 0:
-#         print("Model files already exist. Use force=True to redownload.")
-#         return
-
-#     response = requests.get(model_url, stream=True)
-#     with open("../models/sam2_hiera_large.pt", 'wb') as f:
-#         for chunk in response.iter_content(chunk_size=8192):
-#             f.write(chunk)
-#     print(f"Downloaded {model_url.split('/')[-1]}")
-
-#     response = requests.get(config_url, stream=True)
-#     with open("../models/sam2_hiera_l.yaml", 'wb') as f:
-#         for chunk in response.iter_content(chunk_size=8192):
-#             f.write(chunk)
-#     print(f"Downloaded {config_url.split('/')[-1]}")
-
-
 def hex2rgb(hex: str, alpha=0.5):
     rgb = tuple(int(hex[i: i + 2], 16) for i in (0, 2, 4))
     return rgb + (alpha,)
