@@ -7,7 +7,7 @@ dependencies:
   - scikit-learn
   - scikit-image
   - scipy
-  - cuda-version=2.6
+  - cuda-version>=11.8
   - pytorch-gpu
   - torchvision
   - sam-2
