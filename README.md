@@ -4,6 +4,7 @@
   </a>
 </p>
 
+[![DOI](https://zenodo.org/badge/823104605.svg)](https://doi.org/10.5281/zenodo.15913054)
 
 # Project #11: Automated species annotation in turbid waters
 
