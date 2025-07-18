@@ -4,16 +4,13 @@
   </a>
 </p>
 
+
+# Project #11: Automated species annotation in turbid waters
+---
+
 [![DOI](https://zenodo.org/badge/823104605.svg)](https://doi.org/10.5281/zenodo.15913054)
 ![Static Badge](https://img.shields.io/badge/Data_on_BIA-S--BIAD2005-blue?style=flat&link=https%3A%2F%2Fdoi.org%2F10.6019%2FS-BIAD2005)
 
-# Project #11: Automated species annotation in turbid waters
-
-
-<!-- [![DOI](https://zenodo.org/badge/DOI/)](https://doi.org/) -->
-
-
----
 This repo was created by the [AI4Life project](https://ai4life.eurobioimaging.eu) using data provided by Nils Jacobsen at [Royal Belgian Institute of Natural Sciences](https://www.naturalsciences.be/en).
 All the images demonstrated in this tutorial are provided under **CC-BY** licence.
 
